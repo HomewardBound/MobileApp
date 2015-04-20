@@ -1,4 +1,4 @@
-/*globals cordovaHTTP*/
+/*globals cordova,cordovaHTTP*/
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,14 +22,43 @@
 'use strict';
 
 var testDetector = function(detector) {
-    // Simulate dog detected
+    // Simulations
+    // Because of time constraints, I am just hacking in simulation
+    // stuff here for testing. This allows me to stay true to actual
+    // deployment environment (as this is run on my android phone)
+    // Not ideal but works for now...
+
+    // Should send the correctly formatted message to receiver
     console.log('About to test detector!');
     detector.onDogDetected('beacon_id123', 10);
     console.log('Done!');
+
+    // Should run in background
+    // TODO
+
+    // Should detect iBeacons
+    // TODO
+
+    // Should report detected iBeacons
+    // TODO
 };
 
 var RECEIVER_URL = 'http://10.0.0.7:8080';
 var DogDetector = function() {
+    // Set it up to scan in the background
+    var notification = {  // TODO: Set the image
+        title: 'Homeward Bound is still active',
+        text: 'Looking for lost pets!'
+    };
+
+    cordova.plugins.backgroundMode.setDefaults(notification);
+    cordova.plugins.backgroundMode.enable();
+    console.log('Background mode enabled!');
+    setTimeout(this.scan, 5000);
+};
+
+DogDetector.prototype.scan = function() {
+    console.log('Scanning for nearby pets!');
 };
 
 DogDetector.prototype.onDogDetected = function(uuid, distance) {
@@ -39,8 +68,7 @@ DogDetector.prototype.onDogDetected = function(uuid, distance) {
 };
 
 DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
-    var req = new XMLHttpRequest(),
-        measurement = {
+    var measurement = {
             uuid: uuid,
             radius: distance,
             timestamp: new Date().getTime(),
@@ -51,38 +79,26 @@ DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
     cordovaHTTP.post(RECEIVER_URL, measurement,
     {/*headers*/}, function(response) {
         // prints 200
+        console.log('Success!');
         console.log(response.status);
-        try {
-            response.data = JSON.parse(response.data);
-            // prints test
-            console.log(response.data.message);
-        } catch(e) {
-            console.error("JSON parsing error");
+                console.log('RESPONSE:'+JSON.stringify(response));
+        if (response.status === 202) {  // Found a lost pet!
+            try {
+                // Retrieve the pet/owner info from the response
+                // and notify the user
+                console.log('RESPONSE:'+JSON.stringify(response));
+            } catch(e) {
+                console.error("JSON parsing error");
+            }
         }
     }, function(response) {
+        console.log('Failure...');
         // prints 403
         console.log(response.status);
 
         //prints Permission denied 
         console.log(response.error);
     });
-
-    // TODO Queue the request in case there is no network connection!
-    req.onload = function(e) {
-        // Record if we should keep reporting the pet location
-        // TODO
-
-        // Notify the user of the nearby pet
-        // TODO
-
-        console.log('Response received: '+ req.responseText);
-        //this.options[id] = JSON.parse(req.responseText);
-    }.bind(this);
-
-    // Check if it was get or post...
-    console.log('Sending POST request to '+ RECEIVER_URL);
-    req.open('post', RECEIVER_URL, true);
-    //req.send(JSON.stringify(measurement));
 };
 
 DogDetector.prototype.getUUID = function(major, minor) {
@@ -108,6 +124,8 @@ var app = {
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
         var detector = new DogDetector();
+
+        // Testing
         testDetector(detector);
     },
     // Update DOM on a Received Event

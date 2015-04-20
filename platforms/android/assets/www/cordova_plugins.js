@@ -8,6 +8,14 @@ module.exports = [
         ]
     },
     {
+        "file": "plugins/de.appplant.cordova.plugin.background-mode/www/background-mode.js",
+        "id": "de.appplant.cordova.plugin.background-mode.BackgroundMode",
+        "clobbers": [
+            "cordova.plugins.backgroundMode",
+            "plugin.backgroundMode"
+        ]
+    },
+    {
         "file": "plugins/org.apache.cordova.file/www/DirectoryEntry.js",
         "id": "org.apache.cordova.file.DirectoryEntry",
         "clobbers": [
@@ -128,6 +136,13 @@ module.exports = [
         "clobbers": [
             "window.resolveLocalFileSystemURI"
         ]
+    },
+    {
+        "file": "plugins/org.apache.cordova.device/www/device.js",
+        "id": "org.apache.cordova.device.device",
+        "clobbers": [
+            "device"
+        ]
     }
 ];
 module.exports.metadata = 
@@ -135,7 +150,9 @@ module.exports.metadata =
 {
     "org.apache.cordova.geolocation": "0.3.12",
     "com.synconset.cordovaHTTP": "0.1.4",
-    "org.apache.cordova.file": "0.2.5"
+    "de.appplant.cordova.plugin.background-mode": "0.6.4",
+    "org.apache.cordova.file": "0.2.5",
+    "org.apache.cordova.device": "0.3.0"
 }
 // BOTTOM OF METADATA
 });

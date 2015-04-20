@@ -1,4 +1,4 @@
-/*globals cordovaHTTP*/
+/*globals cordova,cordovaHTTP*/
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -45,6 +45,20 @@ var testDetector = function(detector) {
 
 var RECEIVER_URL = 'http://10.0.0.7:8080';
 var DogDetector = function() {
+    // Set it up to scan in the background
+    var notification = {  // TODO: Set the image
+        title: 'Homeward Bound is still active',
+        text: 'Looking for lost pets!'
+    };
+
+    cordova.plugins.backgroundMode.setDefaults(notification);
+    cordova.plugins.backgroundMode.enable();
+    console.log('Background mode enabled!');
+    setTimeout(this.scan, 5000);
+};
+
+DogDetector.prototype.scan = function() {
+    console.log('Scanning for nearby pets!');
 };
 
 DogDetector.prototype.onDogDetected = function(uuid, distance) {
@@ -65,15 +79,20 @@ DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
     cordovaHTTP.post(RECEIVER_URL, measurement,
     {/*headers*/}, function(response) {
         // prints 200
+        console.log('Success!');
         console.log(response.status);
-        try {
-            response.data = JSON.parse(response.data);
-            // prints test
-            console.log(response.data.message);
-        } catch(e) {
-            console.error("JSON parsing error");
+                console.log('RESPONSE:'+JSON.stringify(response));
+        if (response.status === 202) {  // Found a lost pet!
+            try {
+                // Retrieve the pet/owner info from the response
+                // and notify the user
+                console.log('RESPONSE:'+JSON.stringify(response));
+            } catch(e) {
+                console.error("JSON parsing error");
+            }
         }
     }, function(response) {
+        console.log('Failure...');
         // prints 403
         console.log(response.status);
 
@@ -105,6 +124,8 @@ var app = {
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
         var detector = new DogDetector();
+
+        // Testing
         testDetector(detector);
     },
     // Update DOM on a Received Event
