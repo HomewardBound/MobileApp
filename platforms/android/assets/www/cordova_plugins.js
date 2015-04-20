@@ -16,6 +16,13 @@ module.exports = [
         ]
     },
     {
+        "file": "plugins/com.randdusing.bluetoothle/www/bluetoothle.js",
+        "id": "com.randdusing.bluetoothle.BluetoothLe",
+        "clobbers": [
+            "window.bluetoothle"
+        ]
+    },
+    {
         "file": "plugins/org.apache.cordova.file/www/DirectoryEntry.js",
         "id": "org.apache.cordova.file.DirectoryEntry",
         "clobbers": [
@@ -151,6 +158,7 @@ module.exports.metadata =
     "org.apache.cordova.geolocation": "0.3.12",
     "com.synconset.cordovaHTTP": "0.1.4",
     "de.appplant.cordova.plugin.background-mode": "0.6.4",
+    "com.randdusing.bluetoothle": "2.1.0",
     "org.apache.cordova.file": "0.2.5",
     "org.apache.cordova.device": "0.3.0"
 }

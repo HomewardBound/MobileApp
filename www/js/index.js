@@ -1,4 +1,4 @@
-/*globals cordova,cordovaHTTP*/
+/*globals bluetoothle,cordova,cordovaHTTP*/
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -33,6 +33,9 @@ var testDetector = function(detector) {
     detector.onDogDetected('beacon_id123', 10);
     console.log('Done!');
 
+    // Should notify user of pet detected
+    detector.uiManager.notify('Detected nearby pet!');
+
     // Should run in background
     // TODO
 
@@ -43,8 +46,32 @@ var testDetector = function(detector) {
     // TODO
 };
 
+var SCAN_DURATION = 5000,
+    SCAN_INTERVAL = 60000;
 var RECEIVER_URL = 'http://10.0.0.7:8080';
-var DogDetector = function() {
+/**
+ * A manager for displaying notifications and setting up the UI.
+ *
+ * @constructor
+ * @return {undefined}
+ */
+var UIManager = function() {
+};
+
+UIManager.prototype.notify = function(message) {
+    // Prompt user with message
+    // TODO
+};
+
+/**
+ * The detector and reporter for pets.
+ *
+ * @constructor
+ * @param {UIManager} ui
+ * @return {undefined}
+ */
+var DogDetector = function(ui) {
+    this.uiManager = ui;
     // Set it up to scan in the background
     var notification = {  // TODO: Set the image
         title: 'Homeward Bound is still active',
@@ -52,17 +79,79 @@ var DogDetector = function() {
     };
 
     cordova.plugins.backgroundMode.setDefaults(notification);
-    cordova.plugins.backgroundMode.enable();
-    console.log('Background mode enabled!');
-    setTimeout(this.scan, 5000);
+    // Bluetooth
+    bluetoothle.initialize(
+        // on success
+        function(status) {
+            console.log('status:'+JSON.stringify(status));
+            if (status.status === 'enabled') {
+                // Turn on background scanning
+                cordova.plugins.backgroundMode.enable();
+                console.log('Background mode enabled!');
+
+                console.log('Bluetooth has been enabled!');
+                this.scan();
+            }
+        }.bind(this),
+        // on error
+        function() {
+            // Turn off background
+            cordova.plugins.backgroundMode.disable();
+            // TODO
+            console.error('Could not start bluetooth LE');
+        }, 
+        // Params
+        {
+            request: true
+        }
+    );
 };
 
 DogDetector.prototype.scan = function() {
+    bluetoothle.startScan(
+    // onStartSuccess
+    function(result) {
+        console.log('Scan result: '+JSON.stringify(result));
+        if (result.status === 'scanStarted') {
+            setTimeout(bluetoothle.stopScan.bind(bluetoothle,
+                // Success
+                function() {
+                    console.log('Scan stopped.');
+                    // Schedule next scan
+                    setTimeout(this.scan.bind(this), SCAN_INTERVAL);
+                }.bind(this),
+                // Error
+                function(e) {
+                    console.log('Could not stop scan: '+JSON.stringify(e));
+                }), 
+            SCAN_DURATION);
+        } else if (result.status === 'scanResult') {
+            var dist = this.getDistance(result.rssi);
+            this.onDogDetected(result.address, dist);
+        }
+    }.bind(this),
+    // onStartError
+    function(err) {
+        console.error('Could not start scan: '+JSON.stringify(err));
+    },
+    // Filter params
+    {});
     console.log('Scanning for nearby pets!');
+};
+
+/**
+ * Get distance from RSSI.
+ *
+ * @return {undefined}
+ */
+DogDetector.prototype.getDistance = function(rssi) {
+    // TODO
+    return Math.abs(rssi);
 };
 
 DogDetector.prototype.onDogDetected = function(uuid, distance) {
     // Get position
+    console.log('Dog detected: '+uuid+' at '+distance);
     var report = this.reportMeasurement.bind(this, uuid, distance);
     navigator.geolocation.getCurrentPosition(report);
 };
@@ -81,7 +170,8 @@ DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
         // prints 200
         console.log('Success!');
         console.log(response.status);
-                console.log('RESPONSE:'+JSON.stringify(response));
+
+        console.log('RESPONSE:'+JSON.stringify(response));
         if (response.status === 202) {  // Found a lost pet!
             try {
                 // Retrieve the pet/owner info from the response
@@ -123,7 +213,8 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        var detector = new DogDetector();
+        var ui = new UIManager();
+        var detector = new DogDetector(ui);
 
         // Testing
         testDetector(detector);

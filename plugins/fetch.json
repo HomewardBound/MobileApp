@@ -31,5 +31,12 @@
             "type": "registry",
             "id": "org.apache.cordova.device"
         }
+    },
+    "com.randdusing.bluetoothle": {
+        "source": {
+            "type": "git",
+            "url": "https://github.com/randdusing/BluetoothLE",
+            "subdir": "."
+        }
     }
 }
