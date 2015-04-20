@@ -22,10 +22,25 @@
 'use strict';
 
 var testDetector = function(detector) {
-    // Simulate dog detected
+    // Simulations
+    // Because of time constraints, I am just hacking in simulation
+    // stuff here for testing. This allows me to stay true to actual
+    // deployment environment (as this is run on my android phone)
+    // Not ideal but works for now...
+
+    // Should send the correctly formatted message to receiver
     console.log('About to test detector!');
     detector.onDogDetected('beacon_id123', 10);
     console.log('Done!');
+
+    // Should run in background
+    // TODO
+
+    // Should detect iBeacons
+    // TODO
+
+    // Should report detected iBeacons
+    // TODO
 };
 
 var RECEIVER_URL = 'http://10.0.0.7:8080';
@@ -39,8 +54,7 @@ DogDetector.prototype.onDogDetected = function(uuid, distance) {
 };
 
 DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
-    var req = new XMLHttpRequest(),
-        measurement = {
+    var measurement = {
             uuid: uuid,
             radius: distance,
             timestamp: new Date().getTime(),
@@ -66,23 +80,6 @@ DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
         //prints Permission denied 
         console.log(response.error);
     });
-
-    // TODO Queue the request in case there is no network connection!
-    req.onload = function(e) {
-        // Record if we should keep reporting the pet location
-        // TODO
-
-        // Notify the user of the nearby pet
-        // TODO
-
-        console.log('Response received: '+ req.responseText);
-        //this.options[id] = JSON.parse(req.responseText);
-    }.bind(this);
-
-    // Check if it was get or post...
-    console.log('Sending POST request to '+ RECEIVER_URL);
-    req.open('post', RECEIVER_URL, true);
-    //req.send(JSON.stringify(measurement));
 };
 
 DogDetector.prototype.getUUID = function(major, minor) {
