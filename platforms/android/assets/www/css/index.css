@@ -26,7 +26,7 @@
     position:relative;             /* position in the center of the screen */
     height:50px;                   /* text area height */
     text-align:center;
-    padding: 10px 10px 10px 10px;     /* image height is 200px (bottom 20px are overlapped with text) */
+    padding: 70px 10px 10px 10px;     /* image height is 200px (bottom 20px are overlapped with text) */
     margin: 0px 0px 0px 0px;  /* offset vertical: half of image height and text area height */
                                    /* offset horizontal: half of text area width */
 }
