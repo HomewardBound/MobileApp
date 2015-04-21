@@ -74,7 +74,6 @@ UIManager.prototype.onScanStart = function() {
     setTimeout(function animateScanBar() {
         if (this.scanning) {
             scanWidth = (scanWidth + 5)%100;
-            console.log('Updating Progress Bar ('+scanWidth+')');
             this.scanBar.setAttribute('style', 'width: '+scanWidth+'%');
             setTimeout(animateScanBar.bind(this), 250);
         }
