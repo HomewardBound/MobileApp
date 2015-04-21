@@ -34,7 +34,7 @@ var testDetector = function(detector) {
     console.log('Done!');
 
     // Should notify user of pet detected
-    detector.uiManager.notify('Detected nearby pet!');
+    detector.ui.notify('Detected nearby pet!');
 
     // Should run in background
     // TODO
@@ -49,6 +49,8 @@ var testDetector = function(detector) {
 var SCAN_DURATION = 5000,
     SCAN_INTERVAL = 60000;
 var RECEIVER_URL = 'http://10.0.0.7:8080';
+
+/* UIManager */
 /**
  * A manager for displaying notifications and setting up the UI.
  *
@@ -56,12 +58,39 @@ var RECEIVER_URL = 'http://10.0.0.7:8080';
  * @return {undefined}
  */
 var UIManager = function() {
+    this.scanning = false;
+    this.scanBar = document.getElementById('scanBar');
+    this.scanTitle = document.getElementById('scanTitle');
+    $.material.init();
+};
+
+UIManager.prototype.onScanStart = function() {
+    // Animate the progress bar
+    this.scanning = true;
+    var scanWidth = 0;
+
+    this.scanTitle.innerHTML = 'Looking for Lost Pets';
+
+    setTimeout(function animateScanBar() {
+        if (this.scanning) {
+            scanWidth = (scanWidth + 5)%100;
+            this.scanBar.setAttribute('style', 'width: '+scanWidth+'%');
+            setTimeout(animateScanBar.bind(this), 250);
+        }
+    }.bind(this), 100);
+};
+
+UIManager.prototype.onScanStop = function() {
+    this.scanning = false;
+    this.scanTitle.innerHTML = 'Look for Lost Pets';
 };
 
 UIManager.prototype.notify = function(message) {
     // Prompt user with message
     // TODO
 };
+
+/* Dog Detector */
 
 /**
  * The detector and reporter for pets.
@@ -71,7 +100,7 @@ UIManager.prototype.notify = function(message) {
  * @return {undefined}
  */
 var DogDetector = function(ui) {
-    this.uiManager = ui;
+    this.ui= ui;
     // Set it up to scan in the background
     var notification = {  // TODO: Set the image
         title: 'Homeward Bound is still active',
@@ -85,6 +114,7 @@ var DogDetector = function(ui) {
         function(status) {
             console.log('status:'+JSON.stringify(status));
             if (status.status === 'enabled') {
+                this.ui.onScanStart();
                 // Turn on background scanning
                 cordova.plugins.backgroundMode.enable();
                 console.log('Background mode enabled!');
@@ -98,6 +128,7 @@ var DogDetector = function(ui) {
             // Turn off background
             cordova.plugins.backgroundMode.disable();
             // TODO
+            this.ui.onScanStop();
             console.error('Could not start bluetooth LE');
         }, 
         // Params
@@ -195,6 +226,8 @@ DogDetector.prototype.getUUID = function(major, minor) {
     return major+'\n'+minor;
 };
 
+// App Begins Here
+
 var app = {
     // Application Constructor
     initialize: function() {
@@ -213,6 +246,7 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
+        console.log('Starting device!');
         var ui = new UIManager();
         var detector = new DogDetector(ui);
 
@@ -222,14 +256,10 @@ var app = {
     // Update DOM on a Received Event
     receivedEvent: function(id) {
         var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
 
         console.log('Received Event: ' + id);
     }
 };
 
+console.log('Initializing app!');
 app.initialize();
