@@ -34,21 +34,17 @@ var testDetector = function(detector) {
     console.log('Done!');
 
     // Should notify user of pet detected
-    detector.ui.notify('Detected nearby pet!');
+    setTimeout(function() {
+        console.log('Calling on PetDiscovered!');
+        detector.ui.onPetDiscovered({name: 'Maui'}, {radius: 40});
+    }, 2000);
 
-    // Should run in background
-    // TODO
-
-    // Should detect iBeacons
-    // TODO
-
-    // Should report detected iBeacons
-    // TODO
 };
 
 var SCAN_DURATION = 5000,
     SCAN_INTERVAL = 60000;
-var RECEIVER_URL = 'http://10.0.0.7:8080';
+
+var RECEIVER_URL = 'http://10.0.0.7:8080';  // FIXME
 
 /* UIManager */
 /**
@@ -58,10 +54,15 @@ var RECEIVER_URL = 'http://10.0.0.7:8080';
  * @return {undefined}
  */
 var UIManager = function() {
+    $.material.init();
+
+    // Scanning elements
     this.scanning = false;
     this.scanBar = document.getElementById('scanBar');
     this.scanTitle = document.getElementById('scanTitle');
-    $.material.init();
+
+    // Pet found
+    this.petContainer = document.getElementById('discoveredPets');
 };
 
 UIManager.prototype.onScanStart = function() {
@@ -86,9 +87,25 @@ UIManager.prototype.onScanStop = function() {
     this.scanBar.setAttribute('style', 'width: 0%');
 };
 
-UIManager.prototype.notify = function(message) {
+UIManager.prototype._createPetElement = function(pet, measurement) {
+    var petCard = document.createElement('div'),
+        header = document.createElement('h3'),
+        content = document.createElement('h2');
+
+    header.innerHTML = 'Found a lost pet!';
+    content.innerHTML = pet.name+'<h4> ('+measurement.radius+' meters away)</h4>';  // TODO: Add more content (pic)
+    petCard.setAttribute('class', 'jumbotron');
+
+    petCard.appendChild(header);
+    petCard.appendChild(content);
+    return petCard;
+};
+
+UIManager.prototype.onPetDiscovered = function(pet, measurement) {
     // Prompt user with message
-    // TODO
+    // For now, create a new card and add it to the main screen
+    var petCard = this._createPetElement(pet, measurement);
+    this.petContainer.appendChild(petCard);
 };
 
 /* Dog Detector */
@@ -228,11 +245,12 @@ DogDetector.prototype.reportMeasurement = function(uuid, distance, pos) {
                 // Retrieve the pet/owner info from the response
                 // and notify the user
                 console.log('RESPONSE:'+JSON.stringify(response));
+                this.ui.onPetDiscovered(response, measurement);
             } catch(e) {
                 console.error("JSON parsing error");
             }
         }
-    }, function(response) {
+    }.bind(this), function(response) {
         console.log('Failure...');
         // prints 403
         console.log(response.status);
