@@ -83,6 +83,7 @@ UIManager.prototype.onScanStart = function() {
 UIManager.prototype.onScanStop = function() {
     this.scanning = false;
     this.scanTitle.innerHTML = 'Look for Lost Pets';
+    this.scanBar.setAttribute('style', 'width: 0%');
 };
 
 UIManager.prototype.notify = function(message) {
@@ -101,6 +102,7 @@ UIManager.prototype.notify = function(message) {
  */
 var DogDetector = function(ui) {
     this.ui= ui;
+    this.scanning = true;
     // Set it up to scan in the background
     var notification = {  // TODO: Set the image
         title: 'Homeward Bound is still active',
@@ -114,28 +116,34 @@ var DogDetector = function(ui) {
         function(status) {
             console.log('status:'+JSON.stringify(status));
             if (status.status === 'enabled') {
-                this.ui.onScanStart();
-                // Turn on background scanning
-                cordova.plugins.backgroundMode.enable();
                 console.log('Background mode enabled!');
-
                 console.log('Bluetooth has been enabled!');
-                this.scan();
+                this.startScanning();
             }
         }.bind(this),
         // on error
         function() {
             // Turn off background
-            cordova.plugins.backgroundMode.disable();
-            // TODO
-            this.ui.onScanStop();
             console.error('Could not start bluetooth LE');
+            this.stopScanning();
         }, 
         // Params
         {
             request: true
         }
     );
+};
+
+DogDetector.prototype.startScanning = function() {
+    this.ui.onScanStart();
+    // Turn on background scanning
+    cordova.plugins.backgroundMode.enable();
+    this.scan();
+};
+
+DogDetector.prototype.stopScanning = function() {
+    cordova.plugins.backgroundMode.disable();
+    this.ui.onScanStop();
 };
 
 DogDetector.prototype.scan = function() {
@@ -149,7 +157,9 @@ DogDetector.prototype.scan = function() {
                 function() {
                     console.log('Scan stopped.');
                     // Schedule next scan
-                    setTimeout(this.scan.bind(this), SCAN_INTERVAL);
+                    if (this.scanning) {
+                        setTimeout(this.scan.bind(this), SCAN_INTERVAL);
+                    }
                 }.bind(this),
                 // Error
                 function(e) {
@@ -168,6 +178,16 @@ DogDetector.prototype.scan = function() {
     // Filter params
     {});
     console.log('Scanning for nearby pets!');
+};
+
+DogDetector.prototype.toggleScanning = function() {
+    this.scanning = !this.scanning;
+    console.log('Scanning is set to '+this.scanning);
+    if (this.scanning) {
+        this.startScanning();
+    } else {
+        this.stopScanning();
+    }
 };
 
 /**
@@ -249,6 +269,9 @@ var app = {
         console.log('Starting device!');
         var ui = new UIManager();
         var detector = new DogDetector(ui);
+
+        // Set up click events
+        document.getElementById('scanCard').onclick = detector.toggleScanning.bind(detector);
 
         // Testing
         testDetector(detector);
